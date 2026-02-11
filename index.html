@@ -217,9 +217,14 @@
         }
         .list-item:last-child { border-bottom: none; }
 
+        /* ▼▼ 位置を修正したバージョン表記 ▼▼ */
         .version {
-            position: absolute; bottom: 15px; right: 20px;
-            font-size: 0.8rem; color: var(--text-sub); opacity: 0.6; letter-spacing: 1px;
+            margin-top: 20px;  /* ボタンの下に余白を作る */
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            opacity: 0.8;
+            text-align: center;
+            width: 100%;
         }
     </style>
 </head>
@@ -238,8 +243,9 @@
                 <input type="number" id="max-val" value="10" placeholder="終了">
             </div>
             <button class="btn-glass" onclick="startGame()">学習を開始</button>
+            
+            <div class="version">v6.1 Center Fixed</div>
         </div>
-        <div class="version">v6.0 All-In-One</div>
     </div>
 
     <div id="game-screen" class="screen">
