@@ -1,39 +1,22 @@
-// data.js の読み込みチェック & 解析
+// data.js の読み込みチェック
 const sentenceList = {};
-
 if (typeof window.rawData !== 'undefined') {
     window.rawData.trim().split('\n').forEach(line => {
         if (!line.trim()) return;
         const match = line.match(/^(\d+)[.\s\t　]+(.+)$/);
-        if (match) {
-            const num = parseInt(match[1], 10);
-            const text = match[2].trim();
-            sentenceList[num] = text;
-        } else {
-            const parts = line.trim().split(/\s+/);
-            const num = parseInt(parts[0], 10);
-            const text = parts.slice(1).join(' ');
-            if (!isNaN(num) && text) sentenceList[num] = text;
-        }
+        if (match) sentenceList[parseInt(match[1], 10)] = match[2].trim();
     });
 } else {
-    alert("エラー: データを読み込めませんでした。");
+    alert("Error: data.js missing");
 }
 
-let numbers = [];
-let leftSwiped = [];
-let currentIndex = 0;
-let startX = 0;
-let currentX = 0;
-let isDragging = false;
-let isFlipped = false;
+let numbers = [], leftSwiped = [], currentIndex = 0;
+let startX = 0, currentX = 0, isDragging = false;
 
+// 要素取得
 const cardWrapper = document.getElementById('card'); 
 const cardInner = document.getElementById('card-inner'); 
-const frontFace = document.getElementById('card-front');
-const backFace = document.getElementById('card-back');
 const nextCard = document.getElementById('next-card');
-const nextCardFront = document.getElementById('next-card-front');
 
 function shuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -44,19 +27,13 @@ function shuffle(array) {
 }
 
 function startGame() {
-    const minInput = document.getElementById('min-val').value;
-    const maxInput = document.getElementById('max-val').value;
-    const min = parseInt(minInput);
-    const max = parseInt(maxInput);
-
-    if (minInput === "" || maxInput === "" || isNaN(min) || isNaN(max)) { 
-        alert("数値を入力してください"); return; 
-    }
-    if (min > max) { alert("範囲の設定が正しくありません"); return; }
+    const min = parseInt(document.getElementById('min-val').value);
+    const max = parseInt(document.getElementById('max-val').value);
+    if (isNaN(min) || isNaN(max)) return alert("Enter numbers");
 
     numbers = [];
     for (let i = min; i <= max; i++) numbers.push(i);
-    if (numbers.length === 0) { alert("指定された範囲のデータがありません"); return; }
+    if (numbers.length === 0) return alert("No data in range");
 
     numbers = shuffle(numbers);
     currentIndex = 0;
@@ -90,93 +67,75 @@ function updateCard() {
     cardWrapper.style.transition = 'none';
     cardInner.classList.remove('is-flipped');
     cardWrapper.style.transform = `translate(0px, 0px) rotate(0deg)`;
-    isFlipped = false;
 
-    frontFace.innerText = currentNum;
-    
-    if (sentenceList[currentNum]) {
-        backFace.innerText = sentenceList[currentNum];
-        backFace.style.color = "var(--text-main)"; 
-    } else {
-        backFace.innerText = "データなし";
-        backFace.style.color = "var(--text-sub)";
-    }
+    document.getElementById('card-front').innerText = currentNum;
+    document.getElementById('card-back').innerText = sentenceList[currentNum] || "No Data";
+    document.getElementById('card-back').style.color = sentenceList[currentNum] ? "var(--text-main)" : "var(--text-sub)";
 
     const nextNum = numbers[currentIndex + 1];
     if (nextNum !== undefined) {
         nextCard.style.display = 'flex';
-        nextCardFront.innerText = nextNum;
-        
+        document.getElementById('next-card-front').innerText = nextNum;
         nextCard.classList.remove('coming-up');
         nextCard.style.transform = ''; 
         nextCard.style.opacity = '';
-        
     } else {
         nextCard.style.display = 'none';
     }
 
     void cardInner.offsetWidth; 
-    // ▼ シンプルな回転指定
+    // ★シンプルなアニメーション指定
     cardInner.style.transition = 'transform 0.6s ease-in-out';
 
-    document.getElementById('progress').innerText = `残り: ${numbers.length - currentIndex}`;
+    document.getElementById('progress').innerText = `Rest: ${numbers.length - currentIndex}`;
 }
 
+// --- タッチ操作 ---
 cardWrapper.addEventListener('touchstart', (e) => {
     if(document.getElementById('pause-modal').classList.contains('active')) return;
     startX = e.touches[0].clientX;
-    currentX = startX;
     isDragging = true;
     cardWrapper.style.transition = 'none';
 });
 
 cardWrapper.addEventListener('touchmove', (e) => {
-    if(!isDragging || document.getElementById('pause-modal').classList.contains('active')) return;
-    currentX = e.touches[0].clientX;
-    const diffX = currentX - startX;
+    if(!isDragging) return;
+    const diffX = e.touches[0].clientX - startX;
     const deg = diffX / 15;
     cardWrapper.style.transform = `translate(${diffX}px, 0px) rotate(${deg}deg)`;
 });
 
-cardWrapper.addEventListener('touchend', () => {
+cardWrapper.addEventListener('touchend', (e) => {
     if(!isDragging) return;
     isDragging = false;
-    
-    if(document.getElementById('pause-modal').classList.contains('active')) return;
-
-    const diffX = currentX - startX;
+    const diffX = e.changedTouches[0].clientX - startX;
     
     if (Math.abs(diffX) < 10) {
         cardWrapper.style.transform = `translate(0px, 0px) rotate(0deg)`;
         cardInner.classList.toggle('is-flipped');
-        isFlipped = !isFlipped;
-        return;
-    }
-
-    cardWrapper.style.transition = 'transform 0.4s ease-out';
-    
-    if (diffX > 80) { 
-        cardWrapper.style.transform = `translate(120vw, 0px) rotate(30deg)`;
-        if (numbers[currentIndex + 1] !== undefined) nextCard.classList.add('coming-up');
-        setTimeout(() => { nextNum(false); }, 300);
-
-    } else if (diffX < -80) { 
-        cardWrapper.style.transform = `translate(-120vw, 0px) rotate(-30deg)`;
-        if (numbers[currentIndex + 1] !== undefined) nextCard.classList.add('coming-up');
-        setTimeout(() => { nextNum(true); }, 300);
+    } else {
+        cardWrapper.style.transition = 'transform 0.4s ease-out';
         
-    } else { 
-        cardWrapper.style.transform = `translate(0px, 0px) rotate(0deg)`;
+        if (diffX > 80) { // Right
+            cardWrapper.style.transform = `translate(120vw, 0px) rotate(30deg)`;
+            if (numbers[currentIndex + 1] !== undefined) nextCard.classList.add('coming-up');
+            setTimeout(() => { 
+                currentIndex++; 
+                updateCard(); 
+            }, 300);
+        } else if (diffX < -80) { // Left
+            cardWrapper.style.transform = `translate(-120vw, 0px) rotate(-30deg)`;
+            if (numbers[currentIndex + 1] !== undefined) nextCard.classList.add('coming-up');
+            setTimeout(() => { 
+                leftSwiped.push(numbers[currentIndex]);
+                currentIndex++;
+                updateCard();
+            }, 300);
+        } else { 
+            cardWrapper.style.transform = `translate(0px, 0px) rotate(0deg)`;
+        }
     }
-    startX = 0;
-    currentX = 0;
 });
-
-function nextNum(isLeft) {
-    if (isLeft) leftSwiped.push(numbers[currentIndex]);
-    currentIndex++;
-    updateCard();
-}
 
 function showResults() {
     document.getElementById('game-screen').classList.remove('active');
@@ -194,7 +153,7 @@ function showResults() {
     listContainer.innerHTML = "";
 
     if (leftSwiped.length === 0) {
-        listContainer.innerText = "全問正解です！";
+        listContainer.innerText = "Perfect!";
         listContainer.style.textAlign = "center";
         listContainer.style.padding = "20px";
     } else {
