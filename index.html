@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <title>Liquid Glass Swipe</title>
+    <link rel="stylesheet" href="style.css?v=20260212">
+</head>
+<body>
+
+<div class="background-orb orb-1"></div>
+<div class="background-orb orb-2"></div>
+
+<div class="container">
+    <div id="setup-screen" class="screen active">
+        <div class="glass-panel">
+            <h2>出題範囲</h2>
+            <div class="input-group">
+                <input type="number" id="min-val" value="1" placeholder="開始"> 
+                <span class="separator">〜</span>
+                <input type="number" id="max-val" value="10" placeholder="終了">
+            </div>
+            <button class="btn-glass" onclick="startGame()">学習を開始</button>
+        </div>
+        <div class="version">v5.0 Updated</div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="header-controls">
+            <button id="pause-btn" class="glass-icon-btn" onclick="togglePause()">II</button>
+            <div id="progress" class="status-badge">準備完了</div>
+        </div>
+        
+        <div id="card-container">
+            <div id="next-card">
+                <div class="card-face card-front" id="next-card-front">0</div>
+            </div>
+
+            <div id="card">
+                <div id="card-inner">
+                    <div class="card-face card-front" id="card-front">0</div>
+                    <div class="card-face card-back" id="card-back">読み込み中...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hint">タップで裏返す / スワイプで次へ</div>
+    </div>
+
+    <div id="pause-modal" class="modal">
+        <div class="modal-content glass-panel">
+            <h3>一時停止</h3>
+            <button onclick="togglePause()" class="btn-glass">再開</button>
+            <button onclick="finishGame()" class="btn-glass btn-danger">終了して結果を見る</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <div class="glass-panel result-panel">
+            <h2>学習結果</h2>
+            <div class="stats-container">
+                <div class="stat-item">
+                    <div class="stat-label">覚えた数</div> 
+                    <div class="stat-value" id="result-fraction">0/0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">正解率</div>
+                    <div class="stat-value highlight" id="result-percent">0%</div>
+                </div>
+            </div>
+            
+            <div class="list-wrapper">
+                <div class="list-box" id="left-list"></div>
+            </div>
+            
+            <button class="btn-glass" onclick="location.reload()">もう一度</button>
+        </div>
+    </div>
+</div>
+
+<script src="data.js"></script>
+<script src="script.js?v=20260212"></script>
+</body>
+</html>
