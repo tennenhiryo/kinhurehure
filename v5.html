@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <title>Liquid Glass Swipe</title>
+    <link rel="stylesheet" href="style.css?v=20260212">
+    <style>
+        /* CSSも念のためここに直書きします（最強の対策） */
+        :root { --bg-color: #000; --text-main: #f5f5f7; --text-sub: #86868b; --glass-bg: rgba(255,255,255,0.05); }
+        body { font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; width: 100vw; height: 100vh; position: fixed; background: var(--bg-color); color: var(--text-main); overflow: hidden; }
+        .background-orb { position: absolute; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: 0.6; }
+        .orb-1 { width: 300px; height: 300px; background: #1a2a6c; top: -50px; left: -50px; }
+        .orb-2 { width: 250px; height: 250px; background: #2a0845; bottom: -50px; right: -50px; }
+        .container { width: 100%; max-width: 400px; height: 100vh; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        .screen { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; gap: 20px; }
+        .screen.active { display: flex; }
+        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; padding: 30px; width: 100%; text-align: center; }
+        input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 12px; color: #fff; border-radius: 12px; width: 80px; text-align: center; font-size: 1.2rem; }
+        .btn-glass { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 16px; width: 100%; border-radius: 18px; font-weight: bold; margin-top: 10px; }
+        
+        /* カード関連 */
+        #card-container { position: relative; height: 420px; width: 100%; display: flex; justify-content: center; align-items: center; perspective: 1200px; }
+        #card, #next-card { width: 300px; height: 420px; position: absolute; }
+        #card { z-index: 10; cursor: grab; }
+        
+        #next-card { z-index: 5; transform: scale(0.9) translateY(20px); opacity: 0.8; border-radius: 36px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: center; align-items: center; pointer-events: none; transition: transform 0.5s, opacity 0.5s; }
+        #next-card.coming-up { transform: scale(1.0) translateY(0px) !important; opacity: 1.0 !important; }
+
+        #card-inner { width: 100%; height: 100%; position: relative; text-align: center; transition: transform 0.6s ease-in-out; transform-style: preserve-3d; border-radius: 36px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+        #card-inner.is-flipped { transform: rotateY(180deg); }
+        
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 36px; display: flex; justify-content: center; align-items: center; padding: 30px; border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(30px); background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)); }
+        .card-front { font-size: 6rem; font-weight: 700; }
+        .card-back { transform: rotateY(180deg); font-size: 1.4rem; background: rgba(0,0,0,0.6); }
+
+        .header-controls { display: flex; justify-content: space-between; width: 100%; padding: 0 10px; margin-bottom: 10px; }
+        .glass-icon-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--glass-bg); border: 1px solid rgba(255,255,255,0.1); color: #fff; }
+        .status-badge { background: rgba(10, 132, 255, 0.2); color: #0a84ff; padding: 6px 16px; border-radius: 20px; font-weight: bold; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .version { position: absolute; bottom: 20px; right: 20px; color: #ff453a; font-weight: bold; opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+<div class="background-orb orb-1"></div>
+<div class="background-orb orb-2"></div>
+
+<div class="container">
+    <div id="setup-screen" class="screen active">
+        <div class="glass-panel">
+            <h2>出題範囲</h2>
+            <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px;">
+                <input type="number" id="min-val" value="1" placeholder="Start"> 
+                <span style="color:#888; align-self:center;">~</span>
+                <input type="number" id="max-val" value="10" placeholder="End">
+            </div>
+            <button class="btn-glass" onclick="startGame()">Start</button>
+        </div>
+        <div class="version">v5.0 Updated (Direct)</div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="header-controls">
+            <button id="pause-btn" class="glass-icon-btn" onclick="togglePause()">II</button>
+            <div id="progress" class="status-badge">Ready</div>
+        </div>
+        <div id="card-container">
+            <div id="next-card"><div class="card-face card-front" id="next-card-front">0</div></div>
+            <div id="card">
+                <div id="card-inner">
+                    <div class="card-face card-front" id="card-front">0</div>
+                    <div class="card-face card-back" id="card-back">...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pause-modal" class="modal">
+        <div class="modal-content glass-panel">
+            <h3>Paused</h3>
+            <button onclick="togglePause()" class="btn-glass">Resume</button>
+            <button onclick="location.reload()" class="btn-glass" style="color:#ff453a; margin-top:10px;">Exit</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <div class="glass-panel">
+            <h2>Result</h2>
+            <div id="result-fraction" style="font-size:2rem; font-weight:bold; margin:20px 0;">0/0</div>
+            <div id="left-list" style="text-align:left; max-height:200px; overflow-y:auto; margin-bottom:20px;"></div>
+            <button class="btn-glass" onclick="location.reload()">Retry</button>
+        </div>
+    </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+    // JSもここに直書きして読み込みミスを防ぎます
+    const sentenceList = {};
+    if (typeof window.rawData !== 'undefined') {
+        window.rawData.trim().split('\n').forEach(line => {
+            const match = line.match(/^(\d+)[.\s\t　]+(.+)$/);
+            if (match) sentenceList[parseInt(match[1])] = match[2].trim();
+        });
+    }
+
+    let numbers = [], leftSwiped = [], currentIndex = 0;
+    const cardWrapper = document.getElementById('card'); 
+    const cardInner = document.getElementById('card-inner'); 
+    const nextCard = document.getElementById('next-card');
+
+    function startGame() {
+        const min = parseInt(document.getElementById('min-val').value);
+        const max = parseInt(document.getElementById('max-val').value);
+        if(isNaN(min) || isNaN(max)) return alert("数値を入力");
+        numbers = [];
+        for(let i=min; i<=max; i++) numbers.push(i);
+        if(!numbers.length) return alert("範囲エラー");
+        
+        // シャッフル
+        for(let i=numbers.length-1; i>0; i--){
+            const j = Math.floor(Math.random()*(i+1));
+            [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+        }
+        
+        document.getElementById('setup-screen').classList.remove('active');
+        document.getElementById('game-screen').classList.add('active');
+        updateCard();
+    }
+
+    function updateCard() {
+        if(currentIndex >= numbers.length) return showResults();
+        
+        const num = numbers[currentIndex];
+        document.getElementById('card-front').innerText = num;
+        document.getElementById('card-back').innerText = sentenceList[num] || "No Data";
+        
+        // リセット
+        cardInner.style.transition = 'none';
+        cardWrapper.style.transition = 'none';
+        cardWrapper.style.transform = 'translate(0,0) rotate(0)';
+        cardInner.classList.remove('is-flipped');
+        
+        // 次のカード
+        const next = numbers[currentIndex+1];
+        if(next !== undefined) {
+            nextCard.style.display = 'flex';
+            document.getElementById('next-card-front').innerText = next;
+            nextCard.classList.remove('coming-up');
+            nextCard.style.transform = ''; nextCard.style.opacity = '';
+        } else {
+            nextCard.style.display = 'none';
+        }
+        
+        void cardInner.offsetWidth;
+        cardInner.style.transition = 'transform 0.6s ease-in-out';
+        document.getElementById('progress').innerText = `Rest: ${numbers.length - currentIndex}`;
+    }
+
+    let startX = 0;
+    cardWrapper.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+    cardWrapper.addEventListener('touchmove', e => {
+        const diff = e.touches[0].clientX - startX;
+        cardWrapper.style.transform = `translate(${diff}px, 0) rotate(${diff/15}deg)`;
+    });
+    cardWrapper.addEventListener('touchend', e => {
+        const diff = e.changedTouches[0].clientX - startX;
+        if(Math.abs(diff) < 10) {
+            cardWrapper.style.transform = '';
+            cardInner.classList.toggle('is-flipped');
+        } else if(Math.abs(diff) > 80) {
+            const isLeft = diff < 0;
+            cardWrapper.style.transition = 'transform 0.4s ease-out';
+            cardWrapper.style.transform = `translate(${isLeft?-120:120}vw, 0) rotate(${isLeft?-30:30}deg)`;
+            if(numbers[currentIndex+1]!==undefined) nextCard.classList.add('coming-up');
+            setTimeout(() => {
+                if(isLeft) leftSwiped.push(numbers[currentIndex]);
+                currentIndex++;
+                updateCard();
+            }, 300);
+        } else {
+            cardWrapper.style.transform = '';
+        }
+    });
+
+    function showResults() {
+        document.getElementById('game-screen').classList.remove('active');
+        document.getElementById('result-screen').classList.add('active');
+        document.getElementById('result-fraction').innerText = `${currentIndex - leftSwiped.length} / ${currentIndex}`;
+        const list = document.getElementById('left-list');
+        list.innerHTML = leftSwiped.map(n => `<div>${n}: ${sentenceList[n]||''}</div>`).join('');
+    }
+    
+    function togglePause() {
+        const m = document.getElementById('pause-modal');
+        m.classList.toggle('active');
+    }
+</script>
+</body>
+</html>
