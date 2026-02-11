@@ -2,156 +2,9 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Liquid Glass Final</title>
-    <style>
-        /* ====================
-           デザイン設定 (v9.0ベース)
-           ==================== */
-        :root {
-            --bg-color: #000000;
-            --text-color: #f0f0f0;
-            --card-bg: rgba(30, 30, 30, 0.6); /* 統一されたカード背景 */
-            --card-border: rgba(255, 255, 255, 0.15);
-            --accent-blue: #4da6ff;
-            --accent-red: #ff5c5c;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-            margin: 0; padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            height: 100vh; width: 100vw;
-            display: flex; justify-content: center; align-items: center;
-            overflow: hidden; touch-action: none;
-        }
-
-        /* 背景 */
-        .orb {
-            position: absolute; border-radius: 50%; filter: blur(90px); z-index: -1; opacity: 0.6;
-        }
-        .orb-1 { width: 300px; height: 300px; background: #1a2a6c; top: -50px; left: -50px; }
-        .orb-2 { width: 250px; height: 250px; background: #4a192c; bottom: -50px; right: -50px; }
-
-        .container {
-            width: 100%; max-width: 400px; height: 100%;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            position: relative;
-        }
-
-        .screen { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; }
-        .screen.active { display: flex; }
-
-        /* パネル共通 */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--card-border);
-            border-radius: 24px; padding: 30px;
-            text-align: center; width: 85%;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-        h2 { margin: 0 0 20px 0; font-size: 1.4rem; letter-spacing: 1px; }
-
-        input {
-            background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
-            padding: 12px; color: #fff; border-radius: 12px; width: 70px;
-            text-align: center; font-size: 1.2rem; outline: none;
-        }
-        button {
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: white; padding: 16px; width: 100%; border-radius: 16px;
-            font-size: 1rem; margin-top: 20px; font-weight: bold; cursor: pointer;
-        }
-        button:active { transform: scale(0.98); background: rgba(255,255,255,0.15); }
-
-        /* --- カードエリア --- */
-        #card-container {
-            position: relative; width: 300px; height: 420px;
-            perspective: 1200px; margin-bottom: 20px;
-        }
-
-        /* 共通カードスタイル */
-        .card-style {
-            width: 100%; height: 100%;
-            position: absolute; top: 0; left: 0;
-            border-radius: 30px;
-            
-            /* 全カード共通設定（明るさ統一） */
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            
-            display: flex; justify-content: center; align-items: center;
-        }
-
-        /* 奥のカード */
-        #next-card {
-            z-index: 1;
-            opacity: 1.0; /* 明るさ統一 */
-            transform: scale(0.9) translateY(25px); /* 位置だけずらす */
-            transition: transform 0.4s ease; /* 透明度変化なし */
-            pointer-events: none;
-        }
-
-        #next-card.coming-up {
-            transform: scale(1.0) translateY(0px) !important;
-        }
-
-        /* 手前のカード */
-        #card {
-            z-index: 10;
-            transform-style: preserve-3d;
-            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        #card.is-flipped {
-            transform: rotateY(180deg);
-        }
-
-        .face {
-            position: absolute; width: 100%; height: 100%;
-            border-radius: 30px;
-            -webkit-backface-visibility: hidden; backface-visibility: hidden;
-            display: flex; justify-content: center; align-items: center;
-        }
-
-        .front {
-            font-size: 5rem; font-weight: 800;
-            background: var(--card-bg);
-        }
-
-        .back {
-            font-size: 1.3rem; padding: 25px; box-sizing: border-box; line-height: 1.6;
-            transform: rotateY(180deg);
-            background: var(--card-bg);
-        }
-
-        .hint { color: var(--text-sub); font-size: 0.85rem; opacity: 0.7; }
-        .version { margin-top: 15px; font-size: 0.75rem; color: #666; }
-
-        /* 結果リストのデザイン */
-        .list-box {
-            text-align: left; max-height: 300px; overflow-y: auto;
-            margin-bottom: 20px; border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .list-item {
-            padding: 12px 5px; 
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.95rem; display: flex; gap: 10px;
-        }
-        /* わかった（青） */
-        .item-known { color: var(--accent-blue); }
-        .item-known .status-icon::before { content: '◯'; }
-        
-        /* わからない（赤） */
-        .item-unknown { color: var(--accent-red); }
-        .item-unknown .status-icon::before { content: '✕'; }
-
-        .item-text { color: var(--text-color); flex: 1; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <title>Liquid Glass v9.2</title>
+    <link rel="stylesheet" href="style.css?v=9.2">
 </head>
 <body>
 
@@ -162,20 +15,25 @@
     <div id="setup-screen" class="screen active">
         <div class="glass-panel">
             <h2>出題範囲</h2>
-            <div style="margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+            <div class="input-container">
                 <input type="number" id="min-val" value="1" placeholder="開始"> 
                 <span> ~ </span>
                 <input type="number" id="max-val" value="10" placeholder="終了">
             </div>
             <button onclick="startGame()">学習を開始</button>
-            <div class="version">v9.1 Split File Edition</div>
+            <div class="version">v9.2 Fixed & Resized</div>
         </div>
     </div>
 
     <div id="game-screen" class="screen">
+        <div class="header-controls">
+            <button id="pause-btn" class="glass-icon-btn" onclick="togglePause()">⏸</button>
+            <div id="progress" class="status-badge">準備完了</div>
+        </div>
+        
         <div id="card-container">
             <div id="next-card" class="card-style">
-                <div style="font-size: 5rem; font-weight: 800;" id="next-text">0</div>
+                <div class="face front" id="next-text">0</div>
             </div>
 
             <div id="card" class="card-style">
@@ -183,179 +41,29 @@
                 <div class="face back" id="card-back">...</div>
             </div>
         </div>
+        
         <div class="hint">タップ：裏返す / スワイプ：次へ</div>
     </div>
 
-    <div id="result-screen" class="screen">
+    <div id="pause-modal" class="modal">
         <div class="glass-panel">
+            <h3>一時停止</h3>
+            <button onclick="togglePause()">再開</button>
+            <button onclick="finishGame()" class="btn-danger">終了して結果を見る</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <div class="glass-panel result-panel">
             <h2>学習終了</h2>
-            <div id="result-score" style="font-size: 1.5rem; font-weight: bold; margin-bottom: 15px;"></div>
-            
+            <div id="result-score" class="score-text"></div>
             <div id="result-list" class="list-box"></div>
-            
             <button onclick="location.reload()">もう一度</button>
         </div>
     </div>
 </div>
 
 <script src="data.js"></script>
-
-<script>
-    // --- データ読み込み処理 ---
-    const sentenceList = {};
-    
-    // data.js が正しく読み込まれているかチェック
-    if (typeof window.rawData !== 'undefined') {
-        window.rawData.trim().split('\n').forEach(line => {
-            if(!line.trim()) return;
-            const match = line.match(/^(\d+)[.\s\t　]+(.+)$/);
-            if(match) sentenceList[parseInt(match[1])] = match[2].trim();
-        });
-    } else {
-        alert("エラー：data.js が読み込めませんでした。\n同じフォルダに配置されていますか？");
-    }
-
-    /* ====================
-       プログラム本体
-       ==================== */
-    let numbers = [];     
-    let leftSwiped = [];  
-    let currentIndex = 0; 
-    
-    const card = document.getElementById('card');
-    const nextCard = document.getElementById('next-card');
-    let startX = 0;
-
-    function startGame() {
-        const min = parseInt(document.getElementById('min-val').value);
-        const max = parseInt(document.getElementById('max-val').value);
-        
-        if(isNaN(min) || isNaN(max)) {
-            alert("数値を入力してください"); return;
-        }
-
-        numbers = [];
-        for(let i=min; i<=max; i++) numbers.push(i);
-        
-        if(numbers.length === 0) {
-            alert("指定された範囲にデータがありません"); return;
-        }
-
-        // シャッフル
-        numbers.sort(() => Math.random() - 0.5);
-        currentIndex = 0;
-        leftSwiped = [];
-
-        document.getElementById('setup-screen').classList.remove('active');
-        document.getElementById('game-screen').classList.add('active');
-        updateView();
-    }
-
-    function updateView() {
-        if(currentIndex >= numbers.length) {
-            showResults();
-            return;
-        }
-
-        const num = numbers[currentIndex];
-        
-        // メインカード更新
-        document.getElementById('card-front').innerText = num;
-        document.getElementById('card-back').innerText = sentenceList[num] || "データなし";
-        
-        // カードリセット
-        card.style.transition = 'none';
-        card.style.transform = 'translate(0,0) rotate(0deg)';
-        card.classList.remove('is-flipped');
-
-        // 次のカード更新
-        const nextNum = numbers[currentIndex + 1];
-        if(nextNum !== undefined) {
-            nextCard.style.display = 'flex';
-            document.getElementById('next-text').innerText = nextNum;
-            
-            // 奥へ戻す
-            nextCard.classList.remove('coming-up');
-            nextCard.style.transition = 'none';
-            nextCard.style.transform = 'scale(0.9) translateY(25px)';
-            
-            requestAnimationFrame(() => {
-                nextCard.style.transition = 'transform 0.4s ease';
-            });
-
-        } else {
-            nextCard.style.display = 'none';
-        }
-
-        // アニメーション復帰
-        requestAnimationFrame(() => {
-            card.style.transition = 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
-        });
-    }
-
-    // 結果表示
-    function showResults() {
-        document.getElementById('game-screen').classList.remove('active');
-        document.getElementById('result-screen').classList.add('active');
-
-        const total = numbers.length;
-        const unknownCount = leftSwiped.length;
-        const knownCount = total - unknownCount;
-        const percent = Math.round((knownCount / total) * 100);
-
-        document.getElementById('result-score').innerText = 
-            `正解率: ${percent}% (${knownCount} / ${total})`;
-
-        const listContainer = document.getElementById('result-list');
-        listContainer.innerHTML = "";
-
-        numbers.forEach(num => {
-            const isUnknown = leftSwiped.includes(num);
-            const div = document.createElement('div');
-            div.className = isUnknown ? "list-item item-unknown" : "list-item item-known";
-            const text = sentenceList[num] || "";
-            div.innerHTML = `
-                <span class="status-icon"></span>
-                <span style="font-weight:bold; width:30px;">${num}</span>
-                <span class="item-text">${text}</span>
-            `;
-            listContainer.appendChild(div);
-        });
-    }
-
-    // タッチ操作
-    card.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
-    
-    card.addEventListener('touchmove', e => {
-        const diff = e.touches[0].clientX - startX;
-        card.style.transform = `translate(${diff}px, 0) rotate(${diff/20}deg)`;
-    });
-
-    card.addEventListener('touchend', e => {
-        const diff = e.changedTouches[0].clientX - startX;
-        
-        if(Math.abs(diff) < 10) {
-            card.style.transform = 'translate(0,0) rotate(0)';
-            card.classList.toggle('is-flipped');
-        } 
-        else if(Math.abs(diff) > 80) {
-            const isLeft = diff < 0;
-            card.style.transition = 'transform 0.4s ease-out';
-            card.style.transform = `translate(${isLeft ? -150 : 150}vw, 0) rotate(${isLeft ? -30 : 30}deg)`;
-            
-            if(numbers[currentIndex+1] !== undefined) {
-                nextCard.classList.add('coming-up');
-            }
-
-            setTimeout(() => {
-                if(isLeft) leftSwiped.push(numbers[currentIndex]);
-                currentIndex++;
-                updateView();
-            }, 300);
-        } else {
-            card.style.transform = 'translate(0,0) rotate(0)';
-        }
-    });
-</script>
+<script src="script.js?v=9.2"></script>
 </body>
 </html>
