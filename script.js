@@ -11,8 +11,10 @@ if (typeof window.rawData !== 'undefined') {
 let numbers = [], leftSwiped = [], currentIndex = 0;
 const card = document.getElementById('card');
 const nextCard = document.getElementById('next-card');
+
 let startX = 0;
 let isDragging = false; 
+let isAnimating = false; // ★連打バグ防止用のフラグを追加
 
 function startGame() {
     const min = parseInt(document.getElementById('min-val').value);
@@ -26,6 +28,7 @@ function startGame() {
     numbers.sort(() => Math.random() - 0.5);
     currentIndex = 0;
     leftSwiped = [];
+    isAnimating = false;
 
     document.getElementById('setup-screen').classList.remove('active');
     document.getElementById('game-screen').classList.add('active');
@@ -73,21 +76,42 @@ function updateView() {
     document.getElementById('progress').innerText = `残り: ${numbers.length - currentIndex}`;
 }
 
+// --- スワイプ処理（マウス・タッチ・キーボード共通） ---
+function swipeCard(direction) {
+    if (isAnimating) return;
+    isAnimating = true; // スワイプ中は操作をロック
+
+    const isLeft = direction === 'left';
+    card.style.transition = 'transform 0.4s ease-out';
+    card.style.transform = `translate(${isLeft ? -150 : 150}vw, 0) rotate(${isLeft ? -30 : 30}deg)`;
+    
+    if(numbers[currentIndex+1] !== undefined) {
+        nextCard.classList.add('coming-up');
+    }
+
+    setTimeout(() => {
+        if(isLeft) leftSwiped.push(numbers[currentIndex]);
+        currentIndex++;
+        updateView();
+        isAnimating = false; // アニメーション終了後にロック解除
+    }, 300);
+}
+
 // --- イベント処理（PC・スマホ共通化） ---
 const handleStart = (clientX) => {
-    if(document.getElementById('pause-modal').classList.contains('active')) return;
+    if(document.getElementById('pause-modal').classList.contains('active') || isAnimating) return;
     startX = clientX;
     isDragging = true;
 };
 
 const handleMove = (clientX) => {
-    if(!isDragging || document.getElementById('pause-modal').classList.contains('active')) return;
+    if(!isDragging || document.getElementById('pause-modal').classList.contains('active') || isAnimating) return;
     const diff = clientX - startX;
     card.style.transform = `translate(${diff}px, 0) rotate(${diff/20}deg)`;
 };
 
 const handleEnd = (clientX) => {
-    if(!isDragging || document.getElementById('pause-modal').classList.contains('active')) return;
+    if(!isDragging || document.getElementById('pause-modal').classList.contains('active') || isAnimating) return;
     isDragging = false;
     const diff = clientX - startX;
     
@@ -98,29 +122,37 @@ const handleEnd = (clientX) => {
     } 
     // スワイプ（ドラッグ）での移動
     else if(Math.abs(diff) > 80) {
-        const isLeft = diff < 0;
-        card.style.transition = 'transform 0.4s ease-out';
-        card.style.transform = `translate(${isLeft ? -150 : 150}vw, 0) rotate(${isLeft ? -30 : 30}deg)`;
-        
-        if(numbers[currentIndex+1] !== undefined) {
-            nextCard.classList.add('coming-up');
-        }
-
-        setTimeout(() => {
-            if(isLeft) leftSwiped.push(numbers[currentIndex]);
-            currentIndex++;
-            updateView();
-        }, 300);
+        swipeCard(diff < 0 ? 'left' : 'right');
     } else {
         // スワイプ量が足りない場合は元に戻る
         card.style.transform = '';
     }
 };
 
+// --- キーボード操作（PC用） ---
+document.addEventListener('keydown', e => {
+    // ゲーム画面以外、一時停止中、アニメーション中はキー操作を無視
+    if (!document.getElementById('game-screen').classList.contains('active')) return;
+    if (document.getElementById('pause-modal').classList.contains('active')) return;
+    if (isAnimating) return;
+
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        card.style.transform = ''; 
+        card.classList.toggle('is-flipped');
+    } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        swipeCard('left');
+    } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        swipeCard('right');
+    }
+});
+
 // 統合された最新のPointer Events（マウス・タッチ両対応）
 card.addEventListener('pointerdown', e => {
-    e.preventDefault(); // テキスト選択などをブロック
-    card.setPointerCapture(e.pointerId); // 指やマウスが少し外れても追従させる
+    e.preventDefault(); 
+    card.setPointerCapture(e.pointerId); 
     handleStart(e.clientX);
 });
 card.addEventListener('pointermove', e => handleMove(e.clientX));
