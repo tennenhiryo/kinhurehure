@@ -12,7 +12,7 @@ let numbers = [], leftSwiped = [], currentIndex = 0;
 const card = document.getElementById('card');
 const nextCard = document.getElementById('next-card');
 let startX = 0;
-let isDragging = false; // PC対応用に追加
+let isDragging = false; 
 
 function startGame() {
     const min = parseInt(document.getElementById('min-val').value);
@@ -46,7 +46,7 @@ function updateView() {
     
     // リセット
     card.style.transition = 'none';
-    card.style.transform = ''; // ★重要：ここを空文字にしてCSSに任せる
+    card.style.transform = ''; 
     card.classList.remove('is-flipped');
 
     // 次のカード
@@ -73,7 +73,7 @@ function updateView() {
     document.getElementById('progress').innerText = `残り: ${numbers.length - currentIndex}`;
 }
 
-// --- マウス・タッチ両対応のイベント処理 ---
+// --- イベント処理（PC・スマホ共通化） ---
 const handleStart = (clientX) => {
     if(document.getElementById('pause-modal').classList.contains('active')) return;
     startX = clientX;
@@ -117,19 +117,17 @@ const handleEnd = (clientX) => {
     }
 };
 
-// --- PC（マウス）用 ---
-card.addEventListener('mousedown', e => handleStart(e.clientX));
-card.addEventListener('mousemove', e => handleMove(e.clientX));
-card.addEventListener('mouseup', e => handleEnd(e.clientX));
-// マウスを長押ししたままカードの外に出た場合の対策
-card.addEventListener('mouseleave', e => {
-    if(isDragging) handleEnd(e.clientX); 
+// 統合された最新のPointer Events（マウス・タッチ両対応）
+card.addEventListener('pointerdown', e => {
+    e.preventDefault(); // テキスト選択などをブロック
+    card.setPointerCapture(e.pointerId); // 指やマウスが少し外れても追従させる
+    handleStart(e.clientX);
 });
-
-// --- スマホ（タッチ）用 ---
-card.addEventListener('touchstart', e => handleStart(e.touches[0].clientX));
-card.addEventListener('touchmove', e => handleMove(e.touches[0].clientX));
-card.addEventListener('touchend', e => handleEnd(e.changedTouches[0].clientX));
+card.addEventListener('pointermove', e => handleMove(e.clientX));
+card.addEventListener('pointerup', e => handleEnd(e.clientX));
+card.addEventListener('pointercancel', e => {
+    if(isDragging) handleEnd(e.clientX);
+});
 
 function togglePause() {
     document.getElementById('pause-modal').classList.toggle('active');
@@ -144,8 +142,8 @@ function showResults() {
     document.getElementById('game-screen').classList.remove('active');
     document.getElementById('result-screen').classList.add('active');
 
-    const total = numbers.length; // 全問題数
-    const played = currentIndex;  // ここまで解いた数
+    const total = numbers.length; 
+    const played = currentIndex;  
     const unknownCount = leftSwiped.length;
     const knownCount = played - unknownCount;
     
@@ -157,7 +155,6 @@ function showResults() {
     const listContainer = document.getElementById('result-list');
     listContainer.innerHTML = "";
 
-    // ここまで解いた分だけ表示（途中終了対応）
     const playedNumbers = numbers.slice(0, played);
     
     playedNumbers.forEach(num => {
