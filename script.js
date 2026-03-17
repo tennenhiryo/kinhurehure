@@ -12,6 +12,7 @@ let numbers = [], leftSwiped = [], currentIndex = 0;
 const card = document.getElementById('card');
 const nextCard = document.getElementById('next-card');
 let startX = 0;
+let isDragging = false; // PC対応用に追加
 
 function startGame() {
     const min = parseInt(document.getElementById('min-val').value);
@@ -72,29 +73,30 @@ function updateView() {
     document.getElementById('progress').innerText = `残り: ${numbers.length - currentIndex}`;
 }
 
-// タッチイベント
-card.addEventListener('touchstart', e => { 
+// --- マウス・タッチ両対応のイベント処理 ---
+const handleStart = (clientX) => {
     if(document.getElementById('pause-modal').classList.contains('active')) return;
-    startX = e.touches[0].clientX; 
-});
+    startX = clientX;
+    isDragging = true;
+};
 
-card.addEventListener('touchmove', e => {
-    if(document.getElementById('pause-modal').classList.contains('active')) return;
-    const diff = e.touches[0].clientX - startX;
+const handleMove = (clientX) => {
+    if(!isDragging || document.getElementById('pause-modal').classList.contains('active')) return;
+    const diff = clientX - startX;
     card.style.transform = `translate(${diff}px, 0) rotate(${diff/20}deg)`;
-});
+};
 
-card.addEventListener('touchend', e => {
-    if(document.getElementById('pause-modal').classList.contains('active')) return;
-    const diff = e.changedTouches[0].clientX - startX;
+const handleEnd = (clientX) => {
+    if(!isDragging || document.getElementById('pause-modal').classList.contains('active')) return;
+    isDragging = false;
+    const diff = clientX - startX;
     
-    // タップ（回転）
+    // タップ（クリック）での回転
     if(Math.abs(diff) < 10) {
-        // ★修正ポイント：インラインスタイルを消してCSSクラスを有効にする
         card.style.transform = ''; 
         card.classList.toggle('is-flipped');
     } 
-    // スワイプ
+    // スワイプ（ドラッグ）での移動
     else if(Math.abs(diff) > 80) {
         const isLeft = diff < 0;
         card.style.transition = 'transform 0.4s ease-out';
@@ -110,10 +112,24 @@ card.addEventListener('touchend', e => {
             updateView();
         }, 300);
     } else {
-        // 元に戻る
+        // スワイプ量が足りない場合は元に戻る
         card.style.transform = '';
     }
+};
+
+// --- PC（マウス）用 ---
+card.addEventListener('mousedown', e => handleStart(e.clientX));
+card.addEventListener('mousemove', e => handleMove(e.clientX));
+card.addEventListener('mouseup', e => handleEnd(e.clientX));
+// マウスを長押ししたままカードの外に出た場合の対策
+card.addEventListener('mouseleave', e => {
+    if(isDragging) handleEnd(e.clientX); 
 });
+
+// --- スマホ（タッチ）用 ---
+card.addEventListener('touchstart', e => handleStart(e.touches[0].clientX));
+card.addEventListener('touchmove', e => handleMove(e.touches[0].clientX));
+card.addEventListener('touchend', e => handleEnd(e.changedTouches[0].clientX));
 
 function togglePause() {
     document.getElementById('pause-modal').classList.toggle('active');
@@ -128,7 +144,7 @@ function showResults() {
     document.getElementById('game-screen').classList.remove('active');
     document.getElementById('result-screen').classList.add('active');
 
-    const total = numbers.length; // 全問題数（または現在の出題数）
+    const total = numbers.length; // 全問題数
     const played = currentIndex;  // ここまで解いた数
     const unknownCount = leftSwiped.length;
     const knownCount = played - unknownCount;
