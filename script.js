@@ -14,9 +14,14 @@ const nextCard = document.getElementById('next-card');
 
 let startX = 0;
 let isDragging = false; 
-let isAnimating = false; // ★連打バグ防止用のフラグを追加
+let isAnimating = false; 
 
 function startGame() {
+    // ★追加：見えないボタンがEnterキーを横取りするのを防ぐ（フォーカス解除）
+    if (document.activeElement) {
+        document.activeElement.blur();
+    }
+
     const min = parseInt(document.getElementById('min-val').value);
     const max = parseInt(document.getElementById('max-val').value);
     
@@ -136,7 +141,8 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('pause-modal').classList.contains('active')) return;
     if (isAnimating) return;
 
-    if (e.key === 'Enter') {
+    // ★修正：Enterキーに加え、Spaceキーにも対応
+    if (e.key === 'Enter' || e.code === 'Enter' || e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
         card.style.transform = ''; 
         card.classList.toggle('is-flipped');
