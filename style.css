@@ -9,7 +9,8 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-    margin: 0; padding: 0;
+    margin: 0;
+    padding: 0;
     background-color: var(--bg-color);
     color: var(--text-color);
     height: 100vh; width: 100vw;
@@ -44,7 +45,8 @@ h2 { margin: 0 0 15px 0; font-size: 1.3rem; }
 .input-container { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; }
 input {
     background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
-    padding: 10px; color: #fff; border-radius: 10px; width: 60px;
+    padding: 10px; color: #fff; border-radius: 10px;
+    width: 60px;
     text-align: center; font-size: 1.1rem; outline: none;
 }
 button {
@@ -57,12 +59,14 @@ button:active { transform: scale(0.98); background: rgba(255,255,255,0.15); }
 
 /* ヘッダー（一時停止ボタンなど） */
 .header-controls {
-    width: 100%; display: flex; justify-content: space-between; align-items: center;
+    width: 100%;
+    display: flex; justify-content: space-between; align-items: center;
     padding: 0 5px; margin-bottom: 15px; z-index: 20; /* 前に出す */
 }
 .glass-icon-btn {
     width: 40px; height: 40px; border-radius: 50%; padding: 0; margin: 0;
-    background: rgba(255,255,255,0.1); border: 1px solid var(--card-border);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid var(--card-border);
     color: var(--text-color); font-size: 1.2rem; display: flex; justify-content: center; align-items: center;
 }
 .status-badge {
@@ -78,12 +82,9 @@ button:active { transform: scale(0.98); background: rgba(255,255,255,0.15); }
 }
 
 .card-style {
-    width: 100%; height: 100%; position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0;
     border-radius: 24px;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
     display: flex; justify-content: center; align-items: center;
 }
 
@@ -96,7 +97,9 @@ button:active { transform: scale(0.98); background: rgba(255,255,255,0.15); }
 #next-card.coming-up { transform: scale(1.0) translateY(0px) !important; }
 
 #card {
-    z-index: 10; transform-style: preserve-3d;
+    z-index: 10; 
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d; /* Safari対応用 */
     transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 #card.is-flipped { transform: rotateY(180deg); }
@@ -105,14 +108,22 @@ button:active { transform: scale(0.98); background: rgba(255,255,255,0.15); }
     position: absolute; width: 100%; height: 100%; border-radius: 24px;
     -webkit-backface-visibility: hidden; backface-visibility: hidden;
     display: flex; justify-content: center; align-items: center;
-}
-.front { font-size: 4rem; font-weight: 800; background: var(--card-bg); }
-.back { 
-    font-size: 1.2rem; padding: 20px; box-sizing: border-box; line-height: 1.5;
-    transform: rotateY(180deg); background: var(--card-bg);
+    
+    /* グラスモーフィズムの装飾をここに移動 */
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
 }
 
-.hint { color: var(--text-sub); font-size: 0.8rem; opacity: 0.7; }
+.front { font-size: 4rem; font-weight: 800; }
+.back { 
+    font-size: 1.2rem;
+    padding: 20px; box-sizing: border-box; line-height: 1.5;
+    transform: rotateY(180deg);
+}
+
+.hint { color: var(--text-color); font-size: 0.8rem; opacity: 0.7; }
 .version { margin-top: 15px; font-size: 0.7rem; color: #666; }
 
 /* モーダル */
